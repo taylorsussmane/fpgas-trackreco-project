@@ -17,8 +17,22 @@
 typedef struct Point_
 {
     float x, y, z, t;  // X, Y, Z position & time
-    int eventID, clusterID;  // event ID
+    int eventID, clusterID, layerID;  // event ID
 }Point;
+
+typedef struct trackerInput_
+{
+    std::vector<float> x;  // X, Y, Z position & time
+    std::vector<float> dx;
+    std::vector<float> y;
+    std::vector<float> dy;
+    std::vector<float> z;
+    std::vector<float> dz;
+    std::vector<float> t;
+    std::vector<float> dt;
+    std::vector<int> eventID; 
+    std::vector<int> clusterID;
+}trackerInput;
 
 class DBSCAN {
 public:    

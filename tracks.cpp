@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <algorithm> 
 
 std::vector<Point> read_data(){
     Point point;
@@ -145,40 +146,19 @@ inline double DBSCAN::calculateDistance(const Point& pointCore, const Point& poi
 {
     return pow(pointCore.x - pointTarget.x,2)+pow(pointCore.y - pointTarget.y,2)+pow(pointCore.z - pointTarget.z,2);
 }
-/*
-void swap(int *arr, int i, int j){
-    int temp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = temp;
-}
 
-void sort_objects(int arr[N]){
+std::vector<Point> sort_objects(std::vector<Point>& point){
+    int N = point.size();
     for (int i = 0; i < N - 1; i++){
-        for (int j = 0; j < N - i - 1; j++){
 // #pragma HLS PIPELINE II=2
-	   if (arr[j] > arr[j + 1]){
-                swap(arr, j, j + 1);
-	    }
-        }
+        for (int j = 0; j < N - i - 1; j++) {
+            if (point[j].clusterID > point[j + 1].clusterID){
+	        std::swap(point[j], point[j + 1]);
+            }
+	}
     }
+    return point;
 }
-*/
-/*
-void clustering(data[N]){
-//receives an array of structs
-    for (int i=0; i<N; ++i){
-	event = data[i];
-	layer_id = event.LayerID;
-	x = event.X;
-	y = event.Y;
-	z = event.Z;
-	t = event.Time; //or charge
-		
-
-
-    }
-}
-*/
 
 void printResults(std::vector<Point>& points, int num_points) {
     int i = 0;
@@ -196,7 +176,45 @@ void printResults(std::vector<Point>& points, int num_points) {
     }
 }
 
+trackerInput restructure(std::vector<Point> point) {
+    trackerInput input;
+    /*
+    std::vector<float> xVec;
+    std::vector<float> yVec;
+    std::vector<float> zVec;
+    std::vector<float> tVec;
+    std::vector<int> eventIDVec;
+    std::vector<int> clusterIDVec;
+    */
+    for (int i = 0; i < point.size(); i++) {
+        input.x.push_back(point[i].x);
+        input.y.push_back(point[i].y);
+        input.z.push_back(point[i].z);
+        input.t.push_back(point[i].t);
+        input.eventID.push_back(point[i].eventID);
+        input.clusterID.push_back(point[i].clusterID);
+    }
+    return input;
+}
 
+/*
+std::vector<trackerInput> tracker_inputs(std::vector<Point> point) {
+    std::vector<trackerInput> input;
+
+    for (int i = 0; i < point.size(); i++) {
+        int j = 0;
+        while (point[i].clusterID == j) {
+            x_max = std::max_element(point[i].clusterID.begin(), point[i].clusterID.end()) // This is wrong
+            x_min
+            y_max
+            y_min
+            z_max
+            z_min
+	    j++;
+        }
+    }	    
+}
+*/
 
 int main() {
 
@@ -209,8 +227,21 @@ int main() {
     DBSCAN ds(MINIMUM_POINTS, EPSILON, point);
     ds.run();
     std::cout << "Clustering algorithm runs" << std::endl;
-    printResults(ds.m_points, ds.getTotalPointSize());
+    // printResults(ds.m_points, ds.getTotalPointSize());
     // printResults(ds.m_points, 20);
+
+    std::cout << "Checking swap/sort functions" << std::endl;
+    std::vector<Point> sorted_points;
+    sorted_points = sort_objects(ds.m_points);
+    printResults(sorted_points, 20);//ds.getTotalPointSize());
+    std::cout << "Sorting worked" << std::endl;
+
+    std::cout << "Reformat so that we get vectors of each struct variable" << std::endl;
+    trackerInput inputs;
+    inputs = restructure(sorted_points);
+    // std::cout << "inputs.x = " << inputs.x << std::endl;
+    std::cout << "Now we have a struct of vectors for tracking identification" << std::endl;
+
     return 0;
 }
 
