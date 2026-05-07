@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cmath>
+#include <sstream>
 
 #define UNCLASSIFIED -1
 #define CORE_POINT 1
@@ -11,12 +12,12 @@
 #define SUCCESS 0
 #define FAILURE -3
 #define MINIMUM_POINTS 1     // minimum number of cluster
-#define EPSILON (0.75*0.75)  // distance for clustering, metre^2
+#define EPSILON (16*16) // (0.75*0.75)  // distance for clustering, metre^2
 
 typedef struct Point_
 {
-    float x, y, z;  // X, Y, Z position
-    int clusterID;  // clustered ID
+    float x, y, z, t;  // X, Y, Z position & time
+    int eventID, clusterID;  // event ID
 }Point;
 
 class DBSCAN {
@@ -33,6 +34,7 @@ public:
     std::vector<int> calculateCluster(Point point);
     int expandCluster(Point point, int clusterID);
     inline double calculateDistance(const Point& pointCore, const Point& pointTarget);
+    inline double calculateTime(const Point& pointCore, const Point& pointTarget);
 
     int getTotalPointSize() {return m_pointSize;}
     int getMinimumClusterSize() {return m_minPoints;}
