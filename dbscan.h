@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <sstream>
+#include<Eigen/Dense>
 
 #define UNCLASSIFIED -1
 #define CORE_POINT 1
@@ -22,9 +23,10 @@ typedef struct Point_
 
 typedef struct trackerInput_
 {
-    std::vector<float> x, y, z, t;  // X, Y, Z position & time
-    std::vector<float> dx, dy, dz;
-    std::vector<int> eventID, clusterID;
+    Eigen::VectorXd x;  // X, Y, Z position & time
+    Eigen::VectorXd dx, y, dy, z, dz, t, dt;
+    Eigen::VectorXd eventID, clusterID;
+
 }trackerInput;
 
 class DBSCAN {
