@@ -16,7 +16,7 @@ distance or time)
 	- Originally pulled from [james-yoo](https://github.com/james-yoo/DBSCAN/blob/master/README.md) with further edits)
 - Restructure the data output from a vector of structs -> to a struct of vectors 
 	- The data was provided as a vector of each hit categorized as a struct each containing hit information such as position (x,y,z), timing, and layer identification 
-	- The data is returned for each cluster as a struct containing vectors for each hit information (position, timing, etc)
+	- The data is returned for each cluster as a struct containing Eigen::vectors for each hit information (position, timing, etc)
 
 **3. Sorting Hits [Kayleigh/Kyla]**
 - Sort hits by clusterID to prepare for track fitting
@@ -25,6 +25,15 @@ distance or time)
 - Apply a Kalman filter to clustered and sorted hits to estimate track parameters (position,
 momentum, angle)
 	- Originally pulled from [hmartiro](https://github.com/hmartiro/kalman-cpp) with further edits
+	- Kalman filter uses Eigen library to do the matrix operations
+- The filter is implemented in tracks.cpp
+	- First, the covariance matrices were defined for 5 clusters (one in each layer ID) to make a track.
+	- The system dynamics, process noise covariance, and measurement noise covariance were defined with constant, arbitrary values. The actual values would depend on the detector and the distribution of the hits.
+ 	- The estimate error covariance was estimated using the uncertainty in the position measurements.
+  	- Finally the Kalman filter was applied to the 5 clusters and the output is printed. The output vector contains only the momentum at the moment. 
+ - The pragmas used were loop flatten in tracks.cpp and latency constraint, allocation limit to the transpose operation in kalmanFilter.cpp.
+   	- I didn't have enough time to fully optimize the timing and resource utilization, but it could certainly be better.
+   	- It also would have been better to define a Matrix class that contains addition, multiplication, transpose, and inverse for arrays, as it would allow for array pragmas to be used. However, I didn't have time to create that class, and instead used the Eigen library which already had those operations implemented. 
 
 **5. Send tracks to output**
 
@@ -33,6 +42,8 @@ momentum, angle)
 - The clustering algorithm has many pragmas because there were many different functions created
 - Some pragmas used include: 
 	- HLS interface
-	- Loop_flatten 
+	- Loop_flatten
+   	- Allocation
+   	- Latency
 
 
