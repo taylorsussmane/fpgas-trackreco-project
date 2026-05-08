@@ -10,6 +10,7 @@
 #include <Eigen/Dense>
 #include <set> 
 
+
 std::vector<Point> read_data(){
     Point point;
     int clusterID = -1;
@@ -24,10 +25,13 @@ std::vector<Point> read_data(){
     }Point;
     */
 
+#pragma HLS interface port=ap_memory pointVec
+
     if (file.is_open()) {
         std::getline(file, line); // Read the header line (first line) and do nothing with it
 
         while (std::getline(file,line)) {
+	#pragma HLS loop_flatten 
             std::stringstream ss(line);
 	    std::string eventIDStr;
 	    std::string layerIDStr;
@@ -60,12 +64,10 @@ int DBSCAN::run()
 {
     int clusterID = 1;
     std::vector<Point>::iterator iter;
-    for(iter = m_points.begin(); iter != m_points.end(); ++iter)
-    {
-        if ( iter->clusterID == UNCLASSIFIED )
-        {
-            if ( expandCluster(*iter, clusterID) != FAILURE )
-            {
+    for(iter = m_points.begin(); iter != m_points.end(); ++iter){
+	#pragma HLS loop_flatten
+        if ( iter->clusterID == UNCLASSIFIED ){
+            if ( expandCluster(*iter, clusterID) != FAILURE ){
                 clusterID += 1;
             }
         }
@@ -83,7 +85,8 @@ int DBSCAN::expandCluster(Point point, int clusterID) {
     else {
         int index = 0, indexCorePoint = 0;
         std::vector<int>::iterator iterSeeds;
-        for( iterSeeds = clusterSeeds.begin(); iterSeeds != clusterSeeds.end(); ++iterSeeds) {
+        for( iterSeeds = clusterSeeds.begin(); iterSeeds != clusterSeeds.end(); ++iterSeeds){
+	    #pragma HLS loop_flatten
             m_points.at(*iterSeeds).clusterID = clusterID;
             if (m_points.at(*iterSeeds).x == point.x && m_points.at(*iterSeeds).y == point.y && m_points.at(*iterSeeds).z == point.z  && m_points.at(*iterSeeds).t == point.t) {
                 indexCorePoint = index;
@@ -93,11 +96,13 @@ int DBSCAN::expandCluster(Point point, int clusterID) {
         clusterSeeds.erase(clusterSeeds.begin()+indexCorePoint);
 
         for(std::vector<int>::size_type i = 0, n = clusterSeeds.size(); i < n; ++i ) {
-            std::vector<int> clusterNeighors = calculateCluster(m_points.at(clusterSeeds[i]));
+            #pragma HLS loop_flatten
+	    std::vector<int> clusterNeighors = calculateCluster(m_points.at(clusterSeeds[i]));
 
             if ( clusterNeighors.size() >= m_minPoints ) {
                 std::vector<int>::iterator iterNeighors;
                 for ( iterNeighors = clusterNeighors.begin(); iterNeighors != clusterNeighors.end(); ++iterNeighors ) {
+		    #pragma HLS loop_flatten
                     if ( m_points.at(*iterNeighors).clusterID == UNCLASSIFIED || m_points.at(*iterNeighors).clusterID == NOISE ) {
                         if ( m_points.at(*iterNeighors).clusterID == UNCLASSIFIED ) {
                             clusterSeeds.push_back(*iterNeighors);
@@ -117,6 +122,7 @@ std::vector<int> DBSCAN::calculateCluster(Point point) {
     std::vector<Point>::iterator iter;
     std::vector<int> clusterIndex;
     for( iter = m_points.begin(); iter != m_points.end(); ++iter) {
+        #pragma HLS loop_flatten
         if ( calculateDistance(point, *iter) <= m_epsilon && calculateTime(point, *iter) <= 1) { // Hard code 1 ig 
             clusterIndex.push_back(index);
         }
@@ -136,7 +142,7 @@ inline double DBSCAN::calculateDistance(const Point& pointCore, const Point& poi
 std::vector<Point> sort_objects(std::vector<Point>& point){
     int N = point.size();
     for (int i = 0; i < N - 1; i++){
-// #pragma HLS PIPELINE II=2
+        #pragma HLS PIPELINE II=2
         for (int j = 0; j < N - i - 1; j++) {
             if (point[j].clusterID > point[j + 1].clusterID){
 	        std::swap(point[j], point[j + 1]);
@@ -153,6 +159,7 @@ void printResults(std::vector<Point>& points, int num_points) {
     "-----------------------------\n"
     , num_points);
     while (i < num_points){
+        #pragma HLS loop_flatten
         printf("%5.2lf %5.2lf %5.2lf %5.21f: %d %d\n",
         points[i].x,
         points[i].y, points[i].z, points[i].t,
@@ -171,20 +178,13 @@ void push_back(Eigen::VectorXd& vec, const float& val){
 trackerInput restructure(std::vector<Point> point) {
     trackerInput input;
     for (int i = 0; i < point.size(); i++) {
-		push_back(input.x, point[i].x);
-		push_back(input.y, point[i].y);
-		push_back(input.z, point[i].z);
-		push_back(input.t, point[i].t);
-		push_back(input.eventID, point[i].eventID);
-		push_back(input.clusterID, point[i].clusterID);
-		        
-
-//		input.x.push_back(point[i].x);
-//        input.y.push_back(point[i].y);
-//        input.z.push_back(point[i].z);
-//        input.t.push_back(point[i].t);
-//        input.eventID.push_back(point[i].eventID);
-//        input.clusterID.push_back(point[i].clusterID);
+        #pragma HLS loop_flatten
+        push_back(input.x, point[i].x);
+        push_back(input.y, point[i].y);
+        push_back(input.z, point[i].z);
+        push_back(input.t, point[i].t);
+        push_back(input.eventID, point[i].eventID);
+        push_back(input.clusterID, point[i].clusterID);
     }
     return input;
 }
@@ -196,6 +196,7 @@ trackerInput tracker_inputs(const trackerInput& input) {
 
     // Loop over each unique cluster ID
     for (int id : uniqueIDs) {
+        #pragma HLS loop_flatten
         float x_min = 0, x_max = 0;
         float y_min = 0, y_max = 0;
         float z_min = 0, z_max = 0;
@@ -205,7 +206,8 @@ trackerInput tracker_inputs(const trackerInput& input) {
 
         // Search through original vectors
         for (size_t i = 0; i < input.clusterID.size(); i++) {
-            if (input.clusterID[i] == id) {
+            #pragma HLS loop_flatten
+	    if (input.clusterID[i] == id) {
                 float x = input.x[i];
                 float y = input.y[i];
                 float z = input.z[i];
@@ -274,7 +276,8 @@ trackerInput tracker_inputs(trackerInput input) {
     for (int i = 0; i < input.clusterID.size(); i++) {
         int j = 1;
         while (clusterIDVal[i] == j) {
-            x_max = std::max_element(point[i].clusterID.begin(), point[i].clusterID.end()) // This is wrong
+            #pragma HLS loop_flatten
+	    x_max = std::max_element(point[i].clusterID.begin(), point[i].clusterID.end()) // This is wrong
             x_min
             y_max
             y_min
@@ -290,6 +293,7 @@ trackerInput tracker_inputs(trackerInput input) {
 
 
 int main() {
+    #pragma HLS dataflow
 
     std::vector<Point> point;
     std::cout << "Checking if things compile" << std::endl;
