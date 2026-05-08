@@ -6,6 +6,8 @@
 #include <vector>
 #include <sstream>
 #include <algorithm> 
+#include "kalmanFilter.cpp"
+#include <Eigen/Dense>
 #include <set> 
 
 std::vector<Point> read_data(){
@@ -160,15 +162,29 @@ void printResults(std::vector<Point>& points, int num_points) {
     }
 }
 
+void push_back(Eigen::VectorXd& vec, const float& val){
+	auto n = vec.size();
+	vec.conservativeResize(n+1);
+	vec[n] = val;
+}
+
 trackerInput restructure(std::vector<Point> point) {
     trackerInput input;
     for (int i = 0; i < point.size(); i++) {
-        input.x.push_back(point[i].x);
-        input.y.push_back(point[i].y);
-        input.z.push_back(point[i].z);
-        input.t.push_back(point[i].t);
-        input.eventID.push_back(point[i].eventID);
-        input.clusterID.push_back(point[i].clusterID);
+		push_back(input.x, point[i].x);
+		push_back(input.y, point[i].y);
+		push_back(input.z, point[i].z);
+		push_back(input.t, point[i].t);
+		push_back(input.eventID, point[i].eventID);
+		push_back(input.clusterID, point[i].clusterID);
+		        
+
+//		input.x.push_back(point[i].x);
+//        input.y.push_back(point[i].y);
+//        input.z.push_back(point[i].z);
+//        input.t.push_back(point[i].t);
+//        input.eventID.push_back(point[i].eventID);
+//        input.clusterID.push_back(point[i].clusterID);
     }
     return input;
 }
@@ -271,6 +287,8 @@ trackerInput tracker_inputs(trackerInput input) {
 }
 */
 
+
+
 int main() {
 
     std::vector<Point> point;
@@ -297,11 +315,41 @@ int main() {
     // std::cout << "inputs.x = " << inputs.x << std::endl;
     std::cout << "Now we have a struct of vectors for tracking identification" << std::endl;
 
-    std::cout << "Now we're reformating the struct of vectors to contain the most important clustering information for the tracking portion of the project" << std::endl;
-    inputs = tracker_inputs(inputs);
-    std::cout << "inputs.clusterID.size() = " << inputs.clusterID.size() << std::endl;
-    std::cout << "inputs.x.size() = " << inputs.x.size() << std::endl;
-    std::cout << "The reformating worked" << std::endl;
+    tracker_inputs(inputs);
+	
+	//prepare matrices for kalman filter
+	int max = inputs.x.size();
+	int m = 3; //number of states
+	int n = 5; //number of measurements
+	
+	for (int i = 0; i < max; i+5){
+		#pragma HLS LOOP_FLATTEN
+		Eigen::MatrixXd A(n,n); //system dynamics
+		Eigen::MatrixXd C(m,n); //output
+		Eigen::MatrixXd Q(n,n); //process noise covariance
+		Eigen::MatrixXd R(m,m); //measurement noise covariance
+		Eigen::MatrixXd P(n,n); //estimate errror covariance 
+		A << 1,0,0,0,0 , 0,1,0,0,0 , 0,0,1,0,0 , 0,0,0,1,0 , 0,0,0,0,1;
+		C.setZero();
+		Q << .05,.05,.05,.05,.05 , .05,.05,.05,.05,.05 , .05,.05,.05,.05,.05 , .05,.05,.05,.05,.05 , .05,.05,.05,.05,.05;
+		R << 5;
+		P << pow(inputs.dx(i)*inputs.dz(i)*inputs.dy(i),2),inputs.dx(i)*inputs.dz(i)*inputs.dy(i),inputs.dx(i)*inputs.dz(i)*inputs.dy(i),inputs.dx(i)*inputs.dz(i)*inputs.dy(i),
+			pow(inputs.dx(i+1)*inputs.dz(i+1)*inputs.dy(i+1),2),inputs.dx(i+1)*inputs.dz(i+1)*inputs.dy(i+1),inputs.dx(i+1)*inputs.dz(i+1)*inputs.dy(i+1),inputs.dx(i+1)*inputs.dz(i+1)*inputs.dy(i+1),
+			pow(inputs.dx(i+2)*inputs.dz(i+2)*inputs.dy(i+2),2),inputs.dx(i+2)*inputs.dz(i+2)*inputs.dy(i+2),inputs.dx(i+2)*inputs.dz(i+2)*inputs.dy(i+2),inputs.dx(i+2)*inputs.dz(i+2)*inputs.dy(i+2),
+			pow(inputs.dx(i+3)*inputs.dz(i+3)*inputs.dy(i+3),2),inputs.dx(i+3)*inputs.dz(i+3)*inputs.dy(i+3),inputs.dx(i+3)*inputs.dz(i+3)*inputs.dy(i+3),inputs.dx(i+3)*inputs.dz(i+3)*inputs.dy(i+3),
+			pow(inputs.dx(i+4)*inputs.dz(i+4)*inputs.dy(i+4),2),inputs.dx(i+4)*inputs.dz(i+4)*inputs.dy(i+4),inputs.dx(i+4)*inputs.dz(i+4)*inputs.dy(i+4),inputs.dx(i+4)*inputs.dz(i+4)*inputs.dy(i+4);
+
+		KalmanFilter kf(inputs.dt(i), A, C, Q, R, P);
+		kf.init(inputs.t(i), inputs.x);
+		
+		Eigen::VectorXd y(m);
+		y << inputs.x(i);
+		
+		kf.update(y);
+		std::cout << "t = " << inputs.t(i) << ", " << "y[" << i << "] = " << y.transpose()
+        << ", x_hat[" << i << "] = " << kf.state().transpose() << std::endl;
+	}
+	
     return 0;
 }
 
