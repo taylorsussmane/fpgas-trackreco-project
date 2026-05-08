@@ -8,6 +8,7 @@
 #include <algorithm> 
 #include "kalmanFilter.cpp"
 #include <Eigen/Dense>
+#include <set> 
 
 std::vector<Point> read_data(){
     Point point;
@@ -73,43 +74,32 @@ int DBSCAN::run()
     return 0;
 }
 
-int DBSCAN::expandCluster(Point point, int clusterID)
-{
+int DBSCAN::expandCluster(Point point, int clusterID) {
     std::vector<int> clusterSeeds = calculateCluster(point);
-
-    if ( clusterSeeds.size() < m_minPoints )
-    {
+    if ( clusterSeeds.size() < m_minPoints ) {
         point.clusterID = NOISE;
         return FAILURE;
     }
-    else
-    {
+    else {
         int index = 0, indexCorePoint = 0;
         std::vector<int>::iterator iterSeeds;
-        for( iterSeeds = clusterSeeds.begin(); iterSeeds != clusterSeeds.end(); ++iterSeeds)
-        {
+        for( iterSeeds = clusterSeeds.begin(); iterSeeds != clusterSeeds.end(); ++iterSeeds) {
             m_points.at(*iterSeeds).clusterID = clusterID;
-            if (m_points.at(*iterSeeds).x == point.x && m_points.at(*iterSeeds).y == point.y && m_points.at(*iterSeeds).z == point.z  && m_points.at(*iterSeeds).t == point.t)
-            {
+            if (m_points.at(*iterSeeds).x == point.x && m_points.at(*iterSeeds).y == point.y && m_points.at(*iterSeeds).z == point.z  && m_points.at(*iterSeeds).t == point.t) {
                 indexCorePoint = index;
             }
             ++index;
         }
         clusterSeeds.erase(clusterSeeds.begin()+indexCorePoint);
 
-        for(std::vector<int>::size_type i = 0, n = clusterSeeds.size(); i < n; ++i )
-        {
+        for(std::vector<int>::size_type i = 0, n = clusterSeeds.size(); i < n; ++i ) {
             std::vector<int> clusterNeighors = calculateCluster(m_points.at(clusterSeeds[i]));
 
-            if ( clusterNeighors.size() >= m_minPoints )
-            {
+            if ( clusterNeighors.size() >= m_minPoints ) {
                 std::vector<int>::iterator iterNeighors;
-                for ( iterNeighors = clusterNeighors.begin(); iterNeighors != clusterNeighors.end(); ++iterNeighors )
-                {
-                    if ( m_points.at(*iterNeighors).clusterID == UNCLASSIFIED || m_points.at(*iterNeighors).clusterID == NOISE )
-                    {
-                        if ( m_points.at(*iterNeighors).clusterID == UNCLASSIFIED )
-                        {
+                for ( iterNeighors = clusterNeighors.begin(); iterNeighors != clusterNeighors.end(); ++iterNeighors ) {
+                    if ( m_points.at(*iterNeighors).clusterID == UNCLASSIFIED || m_points.at(*iterNeighors).clusterID == NOISE ) {
+                        if ( m_points.at(*iterNeighors).clusterID == UNCLASSIFIED ) {
                             clusterSeeds.push_back(*iterNeighors);
                             n = clusterSeeds.size();
                         }
@@ -118,20 +108,16 @@ int DBSCAN::expandCluster(Point point, int clusterID)
                 }
             }
         }
-
         return SUCCESS;
     }
 }
 
-std::vector<int> DBSCAN::calculateCluster(Point point)
-{
+std::vector<int> DBSCAN::calculateCluster(Point point) {
     int index = 0;
     std::vector<Point>::iterator iter;
     std::vector<int> clusterIndex;
-    for( iter = m_points.begin(); iter != m_points.end(); ++iter)
-    {
-        if ( calculateDistance(point, *iter) <= m_epsilon && calculateTime(point, *iter) <= 1) // Hard code 1 ig
-        {
+    for( iter = m_points.begin(); iter != m_points.end(); ++iter) {
+        if ( calculateDistance(point, *iter) <= m_epsilon && calculateTime(point, *iter) <= 1) { // Hard code 1 ig 
             clusterIndex.push_back(index);
         }
         index++;
@@ -139,13 +125,11 @@ std::vector<int> DBSCAN::calculateCluster(Point point)
     return clusterIndex;
 }
 
-inline double DBSCAN::calculateTime(const Point& pointCore, const Point& pointTarget )
-{
+inline double DBSCAN::calculateTime(const Point& pointCore, const Point& pointTarget ) {
     return pow(pointCore.t - pointTarget.t,2);
 }
 
-inline double DBSCAN::calculateDistance(const Point& pointCore, const Point& pointTarget )
-{
+inline double DBSCAN::calculateDistance(const Point& pointCore, const Point& pointTarget ) {
     return pow(pointCore.x - pointTarget.x,2)+pow(pointCore.y - pointTarget.y,2)+pow(pointCore.z - pointTarget.z,2);
 }
 
@@ -205,13 +189,91 @@ trackerInput restructure(std::vector<Point> point) {
     return input;
 }
 
-void tracker_inputs(trackerInput input) {
-    std::cout << "input.clusterID.size() = " << input.clusterID.size() << std::endl;
-    std::cout << "input.x.size() = " << input.x.size() << "; input.dx.size() = " << input.dx.size() << std::endl;
-    /*
-    for (int i = 0; i < input.x.size(); i++) {
-        int j = 0;
-        while (input.clusterID[i] == j) {
+trackerInput tracker_inputs(const trackerInput& input) {
+    trackerInput updated_input;
+    // Get unique cluster IDs
+    std::set<int> uniqueIDs(input.clusterID.begin(), input.clusterID.end());
+
+    // Loop over each unique cluster ID
+    for (int id : uniqueIDs) {
+        float x_min = 0, x_max = 0;
+        float y_min = 0, y_max = 0;
+        float z_min = 0, z_max = 0;
+        float t_min = 0, t_max = 0;
+
+        bool firstMatch = true;
+
+        // Search through original vectors
+        for (size_t i = 0; i < input.clusterID.size(); i++) {
+            if (input.clusterID[i] == id) {
+                float x = input.x[i];
+                float y = input.y[i];
+                float z = input.z[i];
+                float t = input.t[i];
+                // Initialize mins/maxes
+                if (firstMatch) {
+                    x_min = x_max = x;
+                    y_min = y_max = y;
+                    z_min = z_max = z;
+                    t_min = t_max = t;
+                    firstMatch = false;
+                }
+                else {
+                    x_min = std::min(x_min, x);
+                    x_max = std::max(x_max, x);
+                    y_min = std::min(y_min, y);
+                    y_max = std::max(y_max, y);
+                    z_min = std::min(z_min, z);
+                    z_max = std::max(z_max, z);
+                    t_min = std::min(t_min, t);
+                    t_max = std::max(t_max, t);
+                }
+            }
+        }
+
+        // Fill updated struct
+        updated_input.clusterID.push_back(id);
+
+        // Midpoints
+        updated_input.x.push_back( (x_max + x_min) / 2.0 );
+        updated_input.y.push_back( (y_max + y_min) / 2.0 );
+        updated_input.z.push_back( (z_max + z_min) / 2.0 );
+        updated_input.t.push_back( (t_max - t_min) );
+
+        // Half widths
+        updated_input.dx.push_back( (x_max - x_min) / 2.0 );
+        updated_input.dy.push_back( (y_max - y_min) / 2.0 );
+        updated_input.dz.push_back( (z_max - z_min) / 2.0 );
+    }
+
+    return updated_input;
+}
+
+/*
+trackerInput tracker_inputs(trackerInput input) {
+    trackerInput updated_input;
+    // Clean up the code by renaming the vectors within the struct
+    // Simplify the cluserID vector by getting rid of redundancies
+    std::set<int> clusterIDVal(input.clusterID.begin(), input.clusterID.end());
+    */ /*
+    std::cout << "unique clusterIDVal: " ;
+    for (int x : clusterIDVal) {
+        std:: cout << x << " ";
+    }
+    std:: cout << std::endl;
+    */ /*
+    std::cout << "unique clusterIDVal.size(): " << clusterIDVal.size() << std::endl;
+
+    std::vector<float> xVal = input.x;
+    std::vector<float> dxVal = input.dx;
+    std::vector<float> yVal = input.y;
+    std::vector<float> dyVal = input.dy;
+    std::vector<float> zVal = input.z;
+    std::vector<float> dzVal = input.dz;
+    
+    for (int i = 0; i < input.clusterID.size(); i++) {
+        int j = 1;
+        while (clusterIDVal[i] == j) {
             x_max = std::max_element(point[i].clusterID.begin(), point[i].clusterID.end()) // This is wrong
             x_min
             y_max
@@ -221,8 +283,9 @@ void tracker_inputs(trackerInput input) {
 	    j++;
         }
     }
-    */    
+    return updated_input
 }
+*/
 
 
 

@@ -26,6 +26,7 @@ typedef struct trackerInput_
     Eigen::VectorXd x;  // X, Y, Z position & time
     Eigen::VectorXd dx, y, dy, z, dz, t, dt;
     Eigen::VectorXd eventID, clusterID;
+
 }trackerInput;
 
 class DBSCAN {

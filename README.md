@@ -1,5 +1,7 @@
 # TAC-HEP FPGAs track reconstruction project
 
+Due to the limited time constraint, the following project compiles and runs. However, we believe that the program does not correctly perform a clustering and tracking procedure. 
+
 **1. Input Simulation [Kyla]**
 - Take simulated tracker hits
 	- Simulated data arrives in a csv file of (event_id, layer_id, x, y, z, time) provided by Varun
@@ -17,7 +19,7 @@ distance or time)
 	- The data is returned for each cluster as a struct containing vectors for each hit information (position, timing, etc)
 
 **3. Sorting Hits [Kayleigh/Kyla]**
-- Sort hits by layer number, timestamp, or X/Y position to prepare for track fitting
+- Sort hits by clusterID to prepare for track fitting
 
 **4. Track Fitting using Kalman Filter [Taylor]**
 - Apply a Kalman filter to clustered and sorted hits to estimate track parameters (position,
@@ -25,3 +27,12 @@ momentum, angle)
 	- Originally pulled from [hmartiro](https://github.com/hmartiro/kalman-cpp) with further edits
 
 **5. Send tracks to output**
+
+**6. Pragmas Included**
+- To generate the data, a python script was used so no pragmas were applied 
+- The clustering algorithm has many pragmas because there were many different functions created
+- Some pragmas used include: 
+	- HLS interface
+	- Loop_flatten 
+
+
