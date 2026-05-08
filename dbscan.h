@@ -22,8 +22,8 @@ typedef struct Point_
 
 typedef struct trackerInput_
 {
-    std::vector<float> x;  // X, Y, Z position & time
-    std::vector<float> dx, y, dy, z, dz, t, dt;
+    std::vector<float> x, y, z, t;  // X, Y, Z position & time
+    std::vector<float> dx, dy, dz;
     std::vector<int> eventID, clusterID;
 }trackerInput;
 

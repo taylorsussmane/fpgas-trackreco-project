@@ -17,7 +17,7 @@ distance or time)
 	- The data is returned for each cluster as a struct containing vectors for each hit information (position, timing, etc)
 
 **3. Sorting Hits [Kayleigh/Kyla]**
-- Sort hits by layer number, timestamp, or X/Y position to prepare for track fitting
+- Sort hits by clusterID to prepare for track fitting
 
 **4. Track Fitting using Kalman Filter [Taylor]**
 - Apply a Kalman filter to clustered and sorted hits to estimate track parameters (position,
