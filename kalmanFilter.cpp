@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdexcept>
-
-#include "kalmanFilter.hpp"
+#include<Eigen/Dense>
+#include "kalmanFilter.h"
 
 KalmanFilter::KalmanFilter(
 	double dt,
@@ -10,7 +10,7 @@ KalmanFilter::KalmanFilter(
 	const Eigen::MatrixXd& Q,
 	const Eigen::MatrixXd& R,
 	const Eigen::MatrixXd& P
-	) : A(A), C(C), Q(Q), R(R), P0(P), m(C.rows()), n(A.rows()), dt(dt), initialized(false), I(n, n), x_hat(n), h_hat_new(n)
+	) : A(A), C(C), Q(Q), R(R), P0(P), m(C.rows()), n(A.rows()), dt(dt), initialized(false), I(n, n), x_hat(n), x_hat_new(n)
 {
 	I.setIdentity();
 }
@@ -33,6 +33,8 @@ void KalmanFilter::init(){
 }
 
 void KalmanFilter::update(const Eigen::VectorXd& y){
+	#pragma HLS latency max=2
+	#pragma HLS allocation function instance=transpose limit=1
 	if (!initialized)
 		throw std::runtime_error("Filter is not initialized.");
 	
