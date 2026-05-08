@@ -15,13 +15,14 @@ distance or time)
 	- Implement the DBSCAN algorithm 
 	- Originally pulled from [james-yoo](https://github.com/james-yoo/DBSCAN/blob/master/README.md) with further edits)
 - Restructure the data output from a vector of structs -> to a struct of vectors 
-	- The data was provided as a vector of each hit categorized as a struct each containing hit information such as position (x,y,z), timing, and layer identification 
-	- The data is returned for each cluster as a struct containing Eigen::vectors for each hit information (position, timing, etc)
+	- The data was provided as a vector of each hit categorized as a struct each containing hit information such as position (x,y,z), timing, and layer identification
+- In every for and while loop we included loop flatten because we weren't partitioning the arrays, so this served to parallelize the loop iterations
 
 **3. Sorting Hits [Kayleigh/Kyla]**
 - Sort hits by clusterID to prepare for track fitting
+- The data is returned for each cluster as a struct containing Eigen::vectors for each hit information (position, timing, etc)
 
-**4. Track Fitting using Kalman Filter [Taylor]**
+**4. Track Fitting using Kalman Filter and Send Tracks to Output [Taylor]**
 - Apply a Kalman filter to clustered and sorted hits to estimate track parameters (position,
 momentum, angle)
 	- Originally pulled from [hmartiro](https://github.com/hmartiro/kalman-cpp) with further edits
@@ -35,15 +36,13 @@ momentum, angle)
    	- I didn't have enough time to fully optimize the timing and resource utilization, but it could certainly be better.
    	- It also would have been better to define a Matrix class that contains addition, multiplication, transpose, and inverse for arrays, as it would allow for array pragmas to be used. However, I didn't have time to create that class, and instead used the Eigen library which already had those operations implemented. 
 
-**5. Send tracks to output**
-
-**6. Pragmas Included**
+**5. Pragmas Included**
 - To generate the data, a python script was used so no pragmas were applied 
-- The clustering algorithm has many pragmas because there were many different functions created
-- Some pragmas used include: 
+- The clustering algorithm has many pragmas because there were many different functions created. Some pragmas used include: 
 	- HLS interface
 	- Loop_flatten
    	- Allocation
    	- Latency
+	- Dataflow-- in the main function each subfunction was called, and dataflow was used to optimize how the functions could work on top of each other and to ensure variables weren't being used before the function before was finished.
 
 

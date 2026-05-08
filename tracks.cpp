@@ -251,47 +251,6 @@ trackerInput tracker_inputs(const trackerInput& input) {
     return updated_input;
 }
 
-/*
-trackerInput tracker_inputs(trackerInput input) {
-    trackerInput updated_input;
-    // Clean up the code by renaming the vectors within the struct
-    // Simplify the cluserID vector by getting rid of redundancies
-    std::set<int> clusterIDVal(input.clusterID.begin(), input.clusterID.end());
-    */ /*
-    std::cout << "unique clusterIDVal: " ;
-    for (int x : clusterIDVal) {
-        std:: cout << x << " ";
-    }
-    std:: cout << std::endl;
-    */ /*
-    std::cout << "unique clusterIDVal.size(): " << clusterIDVal.size() << std::endl;
-
-    std::vector<float> xVal = input.x;
-    std::vector<float> dxVal = input.dx;
-    std::vector<float> yVal = input.y;
-    std::vector<float> dyVal = input.dy;
-    std::vector<float> zVal = input.z;
-    std::vector<float> dzVal = input.dz;
-    
-    for (int i = 0; i < input.clusterID.size(); i++) {
-        int j = 1;
-        while (clusterIDVal[i] == j) {
-            #pragma HLS loop_flatten
-	    x_max = std::max_element(point[i].clusterID.begin(), point[i].clusterID.end()) // This is wrong
-            x_min
-            y_max
-            y_min
-            z_max
-            z_min
-	    j++;
-        }
-    }
-    return updated_input
-}
-*/
-
-
-
 int main() {
     #pragma HLS dataflow
 
