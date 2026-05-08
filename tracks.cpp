@@ -178,14 +178,6 @@ void printResults(std::vector<Point>& points, int num_points) {
 
 trackerInput restructure(std::vector<Point> point) {
     trackerInput input;
-    /*
-    std::vector<float> xVec;
-    std::vector<float> yVec;
-    std::vector<float> zVec;
-    std::vector<float> tVec;
-    std::vector<int> eventIDVec;
-    std::vector<int> clusterIDVec;
-    */
     for (int i = 0; i < point.size(); i++) {
         input.x.push_back(point[i].x);
         input.y.push_back(point[i].y);
@@ -197,13 +189,13 @@ trackerInput restructure(std::vector<Point> point) {
     return input;
 }
 
-/*
-std::vector<trackerInput> tracker_inputs(std::vector<Point> point) {
-    std::vector<trackerInput> input;
-
-    for (int i = 0; i < point.size(); i++) {
+void tracker_inputs(trackerInput input) {
+    std::cout << "input.clusterID.size() = " << input.clusterID.size() << std::endl;
+    std::cout << "input.x.size() = " << input.x.size() << "; input.dx.size() = " << input.dx.size() << std::endl;
+    /*
+    for (int i = 0; i < input.x.size(); i++) {
         int j = 0;
-        while (point[i].clusterID == j) {
+        while (input.clusterID[i] == j) {
             x_max = std::max_element(point[i].clusterID.begin(), point[i].clusterID.end()) // This is wrong
             x_min
             y_max
@@ -212,9 +204,9 @@ std::vector<trackerInput> tracker_inputs(std::vector<Point> point) {
             z_min
 	    j++;
         }
-    }	    
+    }
+    */    
 }
-*/
 
 int main() {
 
@@ -242,6 +234,7 @@ int main() {
     // std::cout << "inputs.x = " << inputs.x << std::endl;
     std::cout << "Now we have a struct of vectors for tracking identification" << std::endl;
 
+    tracker_inputs(inputs);
     return 0;
 }
 

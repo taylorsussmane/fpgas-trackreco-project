@@ -23,15 +23,8 @@ typedef struct Point_
 typedef struct trackerInput_
 {
     std::vector<float> x;  // X, Y, Z position & time
-    std::vector<float> dx;
-    std::vector<float> y;
-    std::vector<float> dy;
-    std::vector<float> z;
-    std::vector<float> dz;
-    std::vector<float> t;
-    std::vector<float> dt;
-    std::vector<int> eventID; 
-    std::vector<int> clusterID;
+    std::vector<float> dx, y, dy, z, dz, t, dt;
+    std::vector<int> eventID, clusterID;
 }trackerInput;
 
 class DBSCAN {
